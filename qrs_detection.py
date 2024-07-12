@@ -36,6 +36,10 @@ def calculate_average_beat(ecg, rpeaks, ax, samp_freq):
     nk.ecg_segment(ecg, rpeaks=rpeaks, sampling_rate=samp_freq, show=True, ax=ax)
     return ax
 
+def ecg_delineate(ecg, rpeaks, samp_freq, ax):
+    signals, waves = nk.ecg_delineate(ecg, rpeaks, samp_freq, show=True, show_type='all')
+    return ax
+
 
 def plot_12_lead_ecg(ecg_all_leads, rpeaks_all_leads, lead_sequence, filename, num_samples, samp_freq):
     fig, axs = plt.subplots(6, 2, figsize=(20, 20))
@@ -60,6 +64,16 @@ def plot_average_beat(ecg_all_leads, rpeaks_all_leads, lead_sequence, filename, 
         calculate_average_beat(ecg_all_leads[idx], rpeaks_all_leads[idx], ax, samp_freq)
         ax.set_ylabel(f'Lead {lead} (\u03BCV)')
     plt.savefig(f'test_files/processed_files/{filename}_average_beats.png')
+
+
+def plot_delineated_ecg(ecg_all_leads, rpeaks_all_leads, lead_sequence, filename, samp_freq):
+    fig, axs = plt.subplots(6, 2, figsize=(15, 15))
+    plt.subplots_adjust(hspace=0.5)
+    for lead, ax in zip(lead_sequence, axs.ravel()):
+        idx = lead_sequence.index(lead)
+        ax = ecg_delineate(ecg_all_leads[idx], rpeaks_all_leads[idx], samp_freq, ax)
+        ax.set_ylabel(f'Lead {lead} (\u03BCV)')
+    plt.savefig(f'test_files/processed_files/ecg_delineated/{filename}_delineated.png')
 
 
 def qrs_detection(file):
@@ -88,6 +102,7 @@ def qrs_detection(file):
 
             plot_12_lead_ecg(ecg_all_leads, rpeaks_all_leads, lead_sequence, name, num_samples, samp_freq)
             plot_average_beat(ecg_all_leads, rpeaks_all_leads, lead_sequence, name, samp_freq)
+            plot_delineated_ecg(ecg_all_leads, rpeaks_all_leads, lead_sequence, name, samp_freq)
 
 
 
