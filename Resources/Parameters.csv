@@ -1,0 +1,7 @@
+CodingSchemeDesignator,CodingSchemeVersion,CodeValue,CodeMeaning
+SCPECG,1.3,5.7.1-3,Fiducial Point
+SCPECG,1.3,5.10.3-1,P Onset
+SCPECG,1.3,5.10.3-2,P Offset
+SCPECG,1.3,5.10.3-3,QRS Onset
+SCPECG,1.3,5.10.3-4,QRS Offset
+SCPECG,1.3,5.10.3-5,T Offset
