@@ -6,7 +6,7 @@ import neurokit2 as nk
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, butter, sosfiltfilt
 
-LEAD_SEQUENCE = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
+# LEAD_SEQUENCE = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
 
 
 def get_test_ecgs():
@@ -47,43 +47,44 @@ def ecg_delineate(ecg, rpeaks, samp_freq, ax):
     return ax
 
 
-def plot_12_lead_ecg(ecg_all_leads, rpeaks_all_leads, filename, num_samples, samp_freq):
+def plot_12_lead_ecg(ecg_all_leads, rpeaks_all_leads, num_samples, samp_freq, lead_seq, sample_idx):
     fig, axs = plt.subplots(6, 2, figsize=(20, 20))
     plt.subplots_adjust(hspace=0.5)
     ticks = np.linspace(0, num_samples / samp_freq, num_samples)
-    for lead, ax in zip(LEAD_SEQUENCE, axs.ravel()):
+    for lead, ax in zip(lead_seq, axs.ravel()):
         ax.set_xlabel('Time (s)')
         ax.set_ylabel('Amplitude (\u03BCV)')
-        idx = LEAD_SEQUENCE.index(lead)
+        idx = lead_seq.index(lead)
         rpeaks = rpeaks_all_leads[idx]
         ax.plot(ticks, ecg_all_leads[idx], 'b', label='Cleaned ECG Signal')
         ax.plot(ticks[rpeaks], ecg_all_leads[idx][rpeaks], 'o', markersize=6, color='red', label='R-peaks')
         ax.set_title(f'ECG Signal with R-peaks for Lead - {lead.upper()}')
-    # plt.savefig(f'neurokit/processed_files/ecg_rpeaks/{filename}_rpeaks.png')
+    # plt.show()
+    plt.savefig(f'processed_files/uk_biobank/{sample_idx}_rpeaks.png')
 
 
-def plot_average_beat(ecg_all_leads, rpeaks_all_leads, filename, samp_freq):
+def plot_average_beat(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, sample_idx):
     fig, axs = plt.subplots(6, 2, figsize=(15, 15))
     plt.subplots_adjust(hspace=0.5)
-    for lead, ax in zip(LEAD_SEQUENCE, axs.ravel()):
-        idx = LEAD_SEQUENCE.index(lead)
+    for lead, ax in zip(lead_seq, axs.ravel()):
+        idx = lead_seq.index(lead)
         try:
             calculate_average_beat(ecg_all_leads[idx], rpeaks_all_leads[idx], ax, samp_freq)
-        except:
-            print(f'Average beat calculation failed for the ECG lead {lead}')
+        except Exception as e:
+            print(f'Average beat calculation failed for the ECG lead {lead} with error - {e}')
             continue
         ax.set_ylabel(f'Lead {lead} (\u03BCV)')
-    # plt.savefig(f'neurokit/processed_files/ecg_average_beats/{filename}_average_beats.png')
+    plt.savefig(f'processed_files/uk_biobank/{sample_idx}_average_beats.png')
 
 
-def plot_delineated_ecg(ecg_all_leads, rpeaks_all_leads, filename, samp_freq):
+def plot_delineated_ecg(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, sample_idx):
     fig, axs = plt.subplots(6, 2, figsize=(15, 15))
     plt.subplots_adjust(hspace=0.5)
-    for lead, ax in zip(LEAD_SEQUENCE, axs.ravel()):
-        idx = LEAD_SEQUENCE.index(lead)
+    for lead, ax in zip(lead_seq, axs.ravel()):
+        idx = lead_seq.index(lead)
         ax = ecg_delineate(ecg_all_leads[idx], rpeaks_all_leads[idx], samp_freq, ax)
         ax.set_ylabel(f'Lead {lead} (\u03BCV)')
-    # plt.savefig(f'neurokit/processed_files/ecg_delineated/{filename}_delineated.png')
+    plt.savefig(f'processed_files/uk_biobank/{sample_idx}_delineated.png')
 
 
 def plot_ecg(ecg, rpeaks, filename, samp_freq, num_samples, raw_ecg, all_spike_indices):
@@ -96,7 +97,8 @@ def plot_ecg(ecg, rpeaks, filename, samp_freq, num_samples, raw_ecg, all_spike_i
         print(f'Average beat calculation failed for the ECG lead I')
 
     axs[1].plot(ticks, raw_ecg, label='Raw ECG Lead I')
-    axs[1].plot(ticks[all_spike_indices], raw_ecg[all_spike_indices], 'o', markersize=7,  color='red', label='Pacemaker Spikes')
+    axs[1].plot(ticks[all_spike_indices], raw_ecg[all_spike_indices], 'o', markersize=7, color='red',
+                label='Pacemaker Spikes')
     for index in all_spike_indices:
         axs[1].annotate('Pacemaker',
                         (ticks[index], raw_ecg[index]),
@@ -130,20 +132,19 @@ def read_dicom(path):
 
 
 def extract_rpeaks(df_ecg, samp_freq):
-    ecg_all_leads, rpeaks_all_leads, qrs_epochs = [], [], []
+    ecg_all_leads, rpeaks_all_leads = [], []
     for lead in df_ecg.columns:
         # using default neurokit method for peak detection
         clean_ecg_original = nk.ecg_clean(df_ecg[lead], sampling_rate=samp_freq)
-        ecg_fixed, is_inverted = nk.ecg_invert(df_ecg[lead], samp_freq)
-        clean_ecg_fixed = nk.ecg_clean(ecg_fixed, sampling_rate=samp_freq)
+        ecg_fixed, is_inverted = nk.ecg_invert(clean_ecg_original, samp_freq)
 
         try:
-            rpeaks = neurokit(clean_ecg_fixed, samp_freq)
-        except:
-            print(f'Something wrong with the ECG lead {lead}')
+            rpeaks = neurokit(ecg_fixed, samp_freq)
+        except Exception as e:
+            print(f"Error processing ECG lead {lead}: {e}")
             rpeaks = []
 
-        ecg_all_leads.append(clean_ecg_original)
+        ecg_all_leads.append(ecg_fixed)
         rpeaks_all_leads.append(rpeaks)
 
     return ecg_all_leads, rpeaks_all_leads
@@ -188,7 +189,7 @@ def extract_rpeaks_1lead(df_ecg, samp_freq, lead, num_samples, filename):
     return rpeaks, raw_ecg, all_spike_indices
 
 
-def qrs_detection(directory_path):
+def qrs_detection_mediconnect(directory_path):
     dicom_files = sorted(os.listdir(directory_path))
     print('Total number of ECG Dicom files', len(dicom_files))
     with open('comparison_ecgs/Locations.txt', 'w') as loc_file:
@@ -219,3 +220,10 @@ def qrs_detection(directory_path):
 
             loc_file.write('--------------------------------------------------------------------------------------'
                            '--------------\n')
+
+
+def pipeline_mimic(directory_path):
+    preprocess_ecg()
+    extract_peaks()
+    average_beat()
+    delineate()
