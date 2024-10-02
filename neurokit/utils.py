@@ -47,7 +47,7 @@ def ecg_delineate(ecg, rpeaks, samp_freq, ax):
     return ax
 
 
-def plot_12_lead_ecg(ecg_all_leads, rpeaks_all_leads, num_samples, samp_freq, lead_seq, sample_idx):
+def plot_12_lead_ecg(ecg_all_leads, rpeaks_all_leads, num_samples, samp_freq, lead_seq, sample_idx, plot_path):
     fig, axs = plt.subplots(6, 2, figsize=(20, 20))
     plt.subplots_adjust(hspace=0.5)
     ticks = np.linspace(0, num_samples / samp_freq, num_samples)
@@ -60,7 +60,8 @@ def plot_12_lead_ecg(ecg_all_leads, rpeaks_all_leads, num_samples, samp_freq, le
         ax.plot(ticks[rpeaks], ecg_all_leads[idx][rpeaks], 'o', markersize=6, color='red', label='R-peaks')
         ax.set_title(f'ECG Signal with R-peaks for Lead - {lead.upper()}')
     # plt.show()
-    plt.savefig(f'processed_files/uk_biobank/{sample_idx}_rpeaks.png')
+    plot_path = os.path.join(plot_path, f'{sample_idx}_rpeaks_after_invert.png')
+    plt.savefig(plot_path)
 
 
 def plot_average_beat(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, sample_idx):
@@ -131,12 +132,18 @@ def read_dicom(path):
     return df_ecg, waveform_seq
 
 
-def extract_rpeaks(df_ecg, samp_freq):
+def extract_rpeaks(df_ecg, samp_freq, dataset):
     ecg_all_leads, rpeaks_all_leads = [], []
     for lead in df_ecg.columns:
         # using default neurokit method for peak detection
         clean_ecg_original = nk.ecg_clean(df_ecg[lead], sampling_rate=samp_freq)
-        ecg_fixed, is_inverted = nk.ecg_invert(clean_ecg_original, samp_freq)
+
+        if dataset == 'UKBIOBANK' and lead.upper() == 'AVR':
+            ecg_fixed, is_inverted = nk.ecg_invert(clean_ecg_original, samp_freq)
+        elif dataset == 'MIMIC':
+            ecg_fixed, is_inverted = nk.ecg_invert(clean_ecg_original, samp_freq)
+        else:
+            ecg_fixed = clean_ecg_original
 
         try:
             rpeaks = neurokit(ecg_fixed, samp_freq)
@@ -221,9 +228,3 @@ def qrs_detection_mediconnect(directory_path):
             loc_file.write('--------------------------------------------------------------------------------------'
                            '--------------\n')
 
-
-def pipeline_mimic(directory_path):
-    preprocess_ecg()
-    extract_peaks()
-    average_beat()
-    delineate()
