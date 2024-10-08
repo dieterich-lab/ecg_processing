@@ -65,12 +65,13 @@ class UKBiobankAnalyzer:
     def preprocess(self):
         self.setup()
         ecg_array = np.load('processed_files/uk_biobank/ukbiobank_ecgs.npy')
+        plot_path = 'processed_files/uk_biobank/'
 
         # Helper function to handle all plotting
-        def plot_all(ecg_all_leads, rpeak_all_leads, idx):
-            plot_12_lead_ecg(ecg_all_leads, rpeak_all_leads, self.num_samples, self.frequency, CHANNELS_SEQ, idx)
-            plot_average_beat(ecg_all_leads, rpeak_all_leads, self.frequency, CHANNELS_SEQ, idx)
-            plot_delineated_ecg(ecg_all_leads, rpeak_all_leads, self.frequency, CHANNELS_SEQ, idx)
+        def plot_all(ecgs, rpeaks, idx):
+            plot_12_lead_ecg(ecgs, rpeaks, self.num_samples, self.frequency, CHANNELS_SEQ, idx, plot_path)
+            plot_average_beat(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
+            plot_delineated_ecg(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
 
         for i, ecg in enumerate(ecg_array):
             df = pd.DataFrame(data=ecg.T, columns=CHANNELS_SEQ)

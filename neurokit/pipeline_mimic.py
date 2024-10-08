@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import wfdb
 
-from utils import extract_rpeaks, plot_12_lead_ecg
+from utils import extract_rpeaks, plot_12_lead_ecg, plot_average_beat, plot_delineated_ecg
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
@@ -24,7 +24,7 @@ class MIMICAnalyzer:
         df_records = pd.read_csv(os.path.join(self.mimic_path, 'record_list.csv'))
         df_records['path'] = df_records['path'].apply(lambda x: os.path.join(self.mimic_path, x))
 
-        df_records = df_records[:100]
+        df_records = df_records[:500]
 
         def read_record(file_path):
             try:
@@ -65,31 +65,32 @@ class MIMICAnalyzer:
         print(signals_array.shape)
         np.save('processed_files/mimic_iv/mimic_ecgs.npy', signals_array)
 
+    def preprocess(self):
+        self.setup()
+        ecg_array = np.load('processed_files/mimic_iv/mimic_ecgs.npy')
+        print(ecg_array.shape)
+
+        plot_path = 'processed_files/mimic_iv/'
+
+        def plot_all(ecgs, rpeaks, idx):
+            plot_12_lead_ecg(ecgs, rpeaks, self.num_samples, self.frequency, CHANNELS_SEQ, idx, plot_path)
+            plot_average_beat(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
+            plot_delineated_ecg(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
+
+        for i, ecg in enumerate(ecg_array):
+            df = pd.DataFrame(data=ecg.T, columns=CHANNELS_SEQ)
+            ecg_all_leads, rpeak_all_leads = extract_rpeaks(df, self.frequency, dataset='MIMIC')
+
+            # plot 12-lead ecgs with detected r-peaks
+            if len(ecg_all_leads) == 12:
+                plot_all(ecg_all_leads, rpeak_all_leads, i)
+
+            if i == 4:
+                break
+
     @staticmethod
     def _extract_signal(r):
         if r is not None:
             return r.p_signal
         else:
             return None
-
-    def preprocess(self):
-        self.setup()
-        ecg_array = np.load('processed_files/mimic_iv/mimic_ecgs.npy')
-
-        plot_path = 'processed_files/mimic_iv/'
-
-        def plot_all(ecg_all_leads, rpeak_all_leads, idx):
-            plot_12_lead_ecg(ecg_all_leads, rpeak_all_leads, self.num_samples, self.frequency, CHANNELS_SEQ, idx, plot_path)
-            # plot_average_beat(ecg_all_leads, rpeak_all_leads, self.frequency, CHANNELS_SEQ, idx)
-            # plot_delineated_ecg(ecg_all_leads, rpeak_all_leads, self.frequency, CHANNELS_SEQ, idx)
-
-        for i, ecg in enumerate(ecg_array):
-            df = pd.DataFrame(data=ecg.T, columns=CHANNELS_SEQ)
-            ecg_all_leads, rpeak_all_leads = extract_rpeaks(df, self.frequency, dataset='MIMIC')
-
-            # Call the helper function to plot all required plots
-
-            plot_all(ecg_all_leads, rpeak_all_leads, i)
-
-            if i == 4:
-                break

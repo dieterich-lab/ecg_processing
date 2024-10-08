@@ -6,8 +6,6 @@ import neurokit2 as nk
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, butter, sosfiltfilt
 
-# LEAD_SEQUENCE = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
-
 
 def get_test_ecgs():
     dicom_root = '/prj/acribis/DICOM-Dateien_zu_EKG-Daten/'
@@ -133,6 +131,15 @@ def read_dicom(path):
 
 
 def extract_rpeaks(df_ecg, samp_freq, dataset):
+    def is_ecg_signal(signal, sampling_rate):
+        try:
+            # Process the signal using NeuroKit's ECG pipeline
+            _, info = nk.ecg_peaks(signal, sampling_rate)
+            return len(info['ECG_R_Peaks']) > 0  # True if R-peaks detected
+        except Exception as e:
+            print(f"Processing error: {e}")
+            return False
+
     ecg_all_leads, rpeaks_all_leads = [], []
     for lead in df_ecg.columns:
         # using default neurokit method for peak detection
@@ -150,9 +157,17 @@ def extract_rpeaks(df_ecg, samp_freq, dataset):
         except Exception as e:
             print(f"Error processing ECG lead {lead}: {e}")
             rpeaks = []
+        try:
+            # Check if this lead is a valid ECG signal
+            if is_ecg_signal(ecg_fixed, samp_freq):
+                ecg_all_leads.append(ecg_fixed)
+                rpeaks_all_leads.append(rpeaks)
+            else:
+                raise ValueError(f"Invalid ECG signal in lead {lead}")
 
-        ecg_all_leads.append(ecg_fixed)
-        rpeaks_all_leads.append(rpeaks)
+        except Exception as e:
+            print(f"Skipping ECG recording due to error: {e}")
+            continue
 
     return ecg_all_leads, rpeaks_all_leads
 
@@ -227,4 +242,3 @@ def qrs_detection_mediconnect(directory_path):
 
             loc_file.write('--------------------------------------------------------------------------------------'
                            '--------------\n')
-

@@ -10,11 +10,11 @@ DATASET = 'MIMIC'
 if __name__ == '__main__':
     if DATASET == 'MEDICONNECT':
         qrs_detection_mediconnect(DICOM_DIR)
-    elif DATASET == 'MIMIC':
-        DIR_PATH = '/biodb/mimic-iv/mimic-iv-ecg-diagnostic-electrocardiogram-matched-subset-1.0'
-        mimic_pipeline = MIMICAnalyzer(DIR_PATH)
-        mimic_pipeline.preprocess()
     elif DATASET == 'UKBIOBANK':
         DIR_PATH = '/biodb/ukbiobank/bulkdata'
         ukbb_pipeline = UKBiobankAnalyzer(DIR_PATH)
         ukbb_pipeline.preprocess()
+    elif DATASET == 'MIMIC':
+        DIR_PATH = '/biodb/mimic-iv/mimic-iv-ecg-diagnostic-electrocardiogram-matched-subset-1.0'
+        mimic_pipeline = MIMICAnalyzer(DIR_PATH)
+        mimic_pipeline.preprocess()
