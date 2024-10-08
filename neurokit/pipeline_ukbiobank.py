@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import xml.etree.ElementTree as ET
 
-from ecg_analysis import extract_rpeaks, plot_12_lead_ecg, plot_average_beat, plot_delineated_ecg
+from utils import extract_rpeaks, plot_12_lead_ecg, plot_average_beat, plot_delineated_ecg
 
 CHANNELS_SEQ = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
 
@@ -33,12 +33,10 @@ class UKBiobankAnalyzer:
         self.num_samples = int(ecg_12_lead_root.find('ChannelSampleCountTotal').text)
         self.num_leads = int(ecg_12_lead_root.find('NumberOfLeads').text)
 
-    def extract_ecgs(self):
-        self.setup()
+        return ecg_xml_files
 
-        # Define the file path
-        all_files = os.listdir(self.ukbiobank_path)
-        ecg_xml_files = [i for i in all_files if i.__contains__('20205')]
+    def extract_ecgs(self):
+        ecg_xml_files = self.setup()
 
         signal_array = np.empty((len(ecg_xml_files), self.num_leads, self.num_samples), dtype=np.float64)
 
@@ -76,7 +74,7 @@ class UKBiobankAnalyzer:
 
         for i, ecg in enumerate(ecg_array):
             df = pd.DataFrame(data=ecg.T, columns=CHANNELS_SEQ)
-            ecg_all_leads, rpeak_all_leads = extract_rpeaks(df, self.frequency)
+            ecg_all_leads, rpeak_all_leads = extract_rpeaks(df, self.frequency, dataset='UKBIOBANK')
 
             # Call the helper function to plot all required plots
             plot_all(ecg_all_leads, rpeak_all_leads, i)
