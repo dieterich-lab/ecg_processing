@@ -36,13 +36,13 @@ def kalidas2017(ecg, sampling_rate):
 
 
 def calculate_average_beat(ecg, rpeaks, ax, samp_freq):
-    nk.ecg_segment(ecg, rpeaks=rpeaks, sampling_rate=samp_freq, show=True, ax=ax)
-    return ax
+    qrs_epochs = nk.ecg_segment(ecg, rpeaks=rpeaks, sampling_rate=samp_freq, show=True, ax=ax)
+    return ax, qrs_epochs
 
 
 def ecg_delineate(ecg, rpeaks, samp_freq, ax):
     signals, waves = nk.ecg_delineate(ecg, rpeaks, samp_freq, show=True, show_type='all')
-    return ax
+    return ax, waves
 
 
 def plot_12_lead_ecg(ecg_all_leads, rpeaks_all_leads, num_samples, samp_freq, lead_seq, sample_idx, plot_path):
@@ -68,12 +68,25 @@ def plot_average_beat(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, samp
     for lead, ax in zip(lead_seq, axs.ravel()):
         idx = lead_seq.index(lead)
         try:
-            calculate_average_beat(ecg_all_leads[idx], rpeaks_all_leads[idx], ax, samp_freq)
+            _, qrs_epochs = calculate_average_beat(ecg_all_leads[idx], rpeaks_all_leads[idx], ax, samp_freq)
         except Exception as e:
             print(f'Average beat calculation failed for the ECG lead {lead} with error - {e}')
             continue
         ax.set_ylabel(f'Lead {lead} (\u03BCV)')
-    plt.savefig(f'processed_files/uk_biobank/{sample_idx}_average_beats.png')
+
+        if lead == 'II':
+            # convert epochs to dataframe
+            df = pd.concat(qrs_epochs)
+            df["Time"] = df.index.get_level_values(1).values
+            df = df.reset_index(drop=True)
+            mean_heartbeat = df.groupby("Time")[['Signal']].mean()
+
+            plt.figure(figsize=(10, 5))
+            plt.plot(mean_heartbeat)
+            plt.savefig(f'processed_files/mimic_iv/{sample_idx}_{lead}_manual_average_beats.png')
+    plt.savefig(f'processed_files/mimic_iv/{sample_idx}_average_beats.png')
+
+    return mean_heartbeat
 
 
 def plot_delineated_ecg(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, sample_idx):
@@ -81,9 +94,10 @@ def plot_delineated_ecg(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, sa
     plt.subplots_adjust(hspace=0.5)
     for lead, ax in zip(lead_seq, axs.ravel()):
         idx = lead_seq.index(lead)
-        ax = ecg_delineate(ecg_all_leads[idx], rpeaks_all_leads[idx], samp_freq, ax)
+        ax, waves = ecg_delineate(ecg_all_leads[idx], rpeaks_all_leads[idx], samp_freq, ax)
         ax.set_ylabel(f'Lead {lead} (\u03BCV)')
-    plt.savefig(f'processed_files/uk_biobank/{sample_idx}_delineated.png')
+    plt.savefig(f'processed_files/mimic_iv/{sample_idx}_delineated.png')
+    return waves
 
 
 def plot_ecg(ecg, rpeaks, filename, samp_freq, num_samples, raw_ecg, all_spike_indices):

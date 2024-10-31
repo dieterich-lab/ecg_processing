@@ -17,4 +17,4 @@ if __name__ == '__main__':
     elif DATASET == 'MIMIC':
         DIR_PATH = '/biodb/mimic-iv/mimic-iv-ecg-diagnostic-electrocardiogram-matched-subset-1.0'
         mimic_pipeline = MIMICAnalyzer(DIR_PATH)
-        mimic_pipeline.preprocess()
+        mimic_pipeline.extract_features()
