@@ -60,18 +60,18 @@ class UKBiobankAnalyzer:
             if ecg_array is not None:
                 signal_array[idx] = ecg_array
 
-        np.save('processed_files/uk_biobank/ukbiobank_ecgs.npy', signal_array)
+        np.save('plots/uk_biobank/ukbiobank_ecgs.npy', signal_array)
 
     def preprocess(self):
         self.setup()
-        ecg_array = np.load('processed_files/uk_biobank/ukbiobank_ecgs.npy')
-        plot_path = 'processed_files/uk_biobank/'
+        ecg_array = np.load('plots/uk_biobank/ukbiobank_ecgs.npy')
+        plot_path = 'plots/uk_biobank/'
 
         # Helper function to handle all plotting
         def plot_all(ecgs, rpeaks, idx):
             plot_12_lead_ecg(ecgs, rpeaks, self.num_samples, self.frequency, CHANNELS_SEQ, idx, plot_path)
-            plot_average_beat(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
-            plot_delineated_ecg(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
+            # plot_average_beat(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
+            waves = plot_delineated_ecg(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx, 'uk_biobank')
 
         for i, ecg in enumerate(ecg_array):
             df = pd.DataFrame(data=ecg.T, columns=CHANNELS_SEQ)
@@ -80,5 +80,5 @@ class UKBiobankAnalyzer:
             # Call the helper function to plot all required plots
             plot_all(ecg_all_leads, rpeak_all_leads, i)
 
-            if i == 4:
+            if i == 10:
                 break

@@ -1,0 +1,14 @@
+{
+  "DATASETS": {
+    "MEDICONNECT": {
+      "DICOM_DIR": "../WP4_Selection/DICOM/"
+    },
+    "UKBIOBANK": {
+      "DIR_PATH": "/biodb/ukbiobank/bulkdata"
+    },
+    "MIMIC": {
+      "DIR_PATH": "/biodb/mimic-iv/mimic-iv-ecg-diagnostic-electrocardiogram-matched-subset-1.0"
+    }
+  },
+  "OUTPUT_DIRECTORY": "./output"
+}

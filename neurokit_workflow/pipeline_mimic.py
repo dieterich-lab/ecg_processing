@@ -6,7 +6,7 @@ import wfdb
 from matplotlib import pyplot as plt
 import neurokit2 as nk
 
-from utils import extract_rpeaks, plot_12_lead_ecg, plot_average_beat, plot_delineated_ecg
+from utils import extract_rpeaks, plot_12_lead_ecg, plot_average_beat, plot_delineated_ecg, filter_ecgs
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
@@ -58,7 +58,7 @@ class MIMICAnalyzer:
 
         # Fill the array with ECG signals
         for idx, row in df_records.iterrows():
-            ecg_signals = self._extract_signal(row['record'])
+            ecg_signals, _ = self._extract_signal(row['record'])
             if ecg_signals is not None and ecg_signals.shape == (self.num_samples, self.num_leads):
                 signals_array[idx] = np.transpose(ecg_signals)
             else:
@@ -66,20 +66,20 @@ class MIMICAnalyzer:
                 print(f"Record at index {idx} does not have the expected shape or is None.")
 
         print(signals_array.shape)
-        np.save('processed_files/mimic_iv/mimic_ecgs.npy', signals_array)
+        np.save('plots/mimic_iv/mimic_ecgs.npy', signals_array)
 
     def preprocess(self):
         df_records = self.setup()
 
-        ecg_array = np.load('processed_files/mimic_iv/mimic_ecgs.npy')
+        ecg_array = np.load('plots/mimic_iv/mimic_ecgs.npy')
         print(ecg_array.shape)
 
-        plot_path = 'processed_files/mimic_iv/'
+        plot_path = 'plots/mimic_iv/'
 
         def plot_all(ecgs, rpeaks, idx):
             # plot_12_lead_ecg(ecgs, rpeaks, self.num_samples, self.frequency, CHANNELS_SEQ, idx, plot_path)
             # mean_heartbeat = plot_average_beat(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
-            waves = plot_delineated_ecg(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx)
+            waves = plot_delineated_ecg(ecgs, rpeaks, self.frequency, CHANNELS_SEQ, idx, 'mimic_iv')
 
         for i, ecg in enumerate(ecg_array):
             df = pd.DataFrame(data=ecg.T, columns=CHANNELS_SEQ)
@@ -89,7 +89,7 @@ class MIMICAnalyzer:
             if len(ecg_all_leads) == 12:
                 plot_all(ecg_all_leads, rpeak_all_leads, i)
 
-            if i == 2:
+            if i == 10:
                 break
 
     def extract_features(self):
@@ -101,7 +101,7 @@ class MIMICAnalyzer:
 
         # Apply process_row to the first 5 rows only and expand into new columns
         df_merged.drop(['rr_interval', 'p_onset', 'qrs_onset', 'p_axis', 'qrs_axis', 't_axis'], axis=1, inplace=True)
-        new_features = df_merged[:5].apply(self._process_row, axis=1, result_type='expand')
+        new_features = df_merged[:10].apply(self._process_row, axis=1, result_type='expand')
 
         # Merge the new columns into df_merged
         df_merged = pd.concat([df_merged, new_features], axis=1)
@@ -109,7 +109,7 @@ class MIMICAnalyzer:
         print(df_merged.head(7))
 
         df_annotations = self.generate_annotations(df_merged)
-        df_annotations.to_csv('processed_files/mimic_iv/mimic_iv_ecg_annotations.csv', index=False)
+        # df_annotations.to_csv('processed_files/mimic_iv/mimic_iv_ecg_annotations.csv', index=False)
 
         print(df_annotations)
 
@@ -119,7 +119,7 @@ class MIMICAnalyzer:
         signal_t = np.transpose(signal)
         ecg_lead2 = signal_t[1]  # Directly accessing Lead II (assuming it's the second row)
 
-        ecg_clean, rpeaks, waves = self._analyze_ecg(ecg_lead2)
+        ecg_clean, rpeaks, waves = self._analyze_ecg(ecg_lead2, row)
 
         self._extract_on_offsets(ecg_baseline_features, ecg_clean, waves)
 
@@ -169,13 +169,13 @@ class MIMICAnalyzer:
         return df_measurements[
             ['subject_id', 'study_id', 'rr_interval', 'p_onset', 'qrs_onset', 'p_axis', 'qrs_axis', 't_axis']]
 
-    def _analyze_ecg(self, ecg_lead2):
+    def _analyze_ecg(self, ecg_lead2, row):
         ecg_clean = nk.ecg_clean(ecg_lead2, sampling_rate=self.frequency)
         _, rpeaks = nk.ecg_peaks(ecg_clean, sampling_rate=self.frequency)
         signals, waves = nk.ecg_delineate(ecg_clean, rpeaks, sampling_rate=self.frequency, show=True, show_type='all')
 
         # Optionally save the delineation plot
-        # plt.savefig(f'processed_files/mimic_iv/delineated_ecg_dwt_{row.name}.png')
+        plt.savefig(f'processed_files/mimic_iv/delineated_ecg_dwt_{row.name}_modified.png')
 
         return ecg_clean, rpeaks, waves
 

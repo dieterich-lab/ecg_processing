@@ -41,6 +41,9 @@ def calculate_average_beat(ecg, rpeaks, ax, samp_freq):
 
 
 def ecg_delineate(ecg, rpeaks, samp_freq, ax):
+    ecg_rate = nk.ecg_rate(rpeaks, sampling_rate=samp_freq)
+    ecg_rate_mean = np.mean(ecg_rate)
+    print(ecg_rate_mean)
     signals, waves = nk.ecg_delineate(ecg, rpeaks, samp_freq, show=True, show_type='all')
     return ax, waves
 
@@ -89,14 +92,15 @@ def plot_average_beat(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, samp
     return mean_heartbeat
 
 
-def plot_delineated_ecg(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, sample_idx):
+def plot_delineated_ecg(ecg_all_leads, rpeaks_all_leads, samp_freq, lead_seq, sample_idx, dataset):
     fig, axs = plt.subplots(6, 2, figsize=(15, 15))
     plt.subplots_adjust(hspace=0.5)
     for lead, ax in zip(lead_seq, axs.ravel()):
-        idx = lead_seq.index(lead)
-        ax, waves = ecg_delineate(ecg_all_leads[idx], rpeaks_all_leads[idx], samp_freq, ax)
-        ax.set_ylabel(f'Lead {lead} (\u03BCV)')
-    plt.savefig(f'processed_files/mimic_iv/{sample_idx}_delineated.png')
+        if lead == 'I':
+            idx = lead_seq.index(lead)
+            ax, waves = ecg_delineate(ecg_all_leads[idx], rpeaks_all_leads[idx], samp_freq, ax)
+            ax.set_ylabel(f'Lead {lead} (\u03BCV)')
+            plt.savefig(f'processed_files/{dataset}/{sample_idx}_delineated_modified.png')
     return waves
 
 
@@ -159,7 +163,7 @@ def extract_rpeaks(df_ecg, samp_freq, dataset):
         # using default neurokit method for peak detection
         clean_ecg_original = nk.ecg_clean(df_ecg[lead], sampling_rate=samp_freq)
 
-        if dataset == 'UKBIOBANK' and lead.upper() == 'AVR':
+        if dataset == 'UKBIOBANK_temp' and lead.upper() == 'AVR':
             ecg_fixed, is_inverted = nk.ecg_invert(clean_ecg_original, samp_freq)
         elif dataset == 'MIMIC':
             ecg_fixed, is_inverted = nk.ecg_invert(clean_ecg_original, samp_freq)
@@ -256,3 +260,37 @@ def qrs_detection_mediconnect(directory_path):
 
             loc_file.write('--------------------------------------------------------------------------------------'
                            '--------------\n')
+
+
+def filter_ecgs(input_data):
+    import antropy as ant
+
+    non_ecgs = []
+    template_1 = input_data[8, 1, :]
+    template_2 = input_data[47, 1, :]
+    fig, axes = plt.subplots(2, 1, figsize=(14, 6))
+    axes[0].plot(template_1)
+    axes[1].plot(template_2)
+    plt.show()
+    for i, data in enumerate(input_data):
+        signal = data[1]
+        samp_entropy = ant.sample_entropy(signal, order=2, metric='chebyshev')
+        corr1 = np.correlate(signal - np.mean(signal), template_1 - np.mean(template_1), mode='full')
+        corr2 = np.correlate(signal - np.mean(signal), template_2 - np.mean(template_2), mode='full')
+        norm_factor1 = len(signal) * np.std(signal) * np.std(template_1)
+        norm_factor2 = len(signal) * np.std(signal) * np.std(template_2)
+        corr1 = corr1 / norm_factor1
+        corr2 = corr2 / norm_factor2
+
+        plt.figure(figsize=(14, 6))
+        plt.plot(signal)
+        plt.title(f'Signal Index {i}')
+        plt.savefig(f'plots/ecg_{i}.png')
+
+        # Define a threshold for correlation and sample entropy
+        if (max(corr1) > 0.12 or max(corr2) > 0.12) and (samp_entropy < 0.5):
+            continue
+        else:
+            non_ecgs.append(i)
+
+    return non_ecgs
