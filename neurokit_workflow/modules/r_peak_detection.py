@@ -39,11 +39,14 @@ def detect_r_peaks(cleaned_ecg, sampling_rate, channel_seq=None, dataset=None):
             signal = cleaned_ecg[j, i, :]
             try:
                 if _is_ecg_signal(signal, sampling_rate):
-                    _, rpeaks = nk.ecg_peaks(signal, sampling_rate=sampling_rate)
-                    r_peaks[i, j] = rpeaks['ECG_R_Peaks']
-                else:
-                    raise ValueError(f"Invalid ECG signal in lead {i} for sample {j}")
+                    if dataset == 'MEDICONNECT':
+                        signal, _ = nk.ecg_invert(signal, sampling_rate)
+
+                    _, peaks = nk.ecg_peaks(signal, sampling_rate=sampling_rate)
+                    r_peaks[i, j] = peaks['ECG_R_Peaks']
+
             except Exception as e:
                 print(f"Error processing ECG lead {i} for sample {j}: {e}")
+                r_peaks[i, j] = []
 
     return r_peaks

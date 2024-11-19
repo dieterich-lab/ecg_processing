@@ -15,39 +15,50 @@ class ECGFeatureExtractor:
 
     def extract_features(self):
         features_list = []
+        channel_1_idx = self.channel_seq.index(self.channel)
 
         for idx, ecg_sample in enumerate(self.cleaned_ecg):
-            channel_1_idx = self.channel_seq.index(self.channel)
-            ecg_channel_1 = ecg_sample[channel_1_idx]
-            r_peaks_channel_1 = self.r_peaks[idx][channel_1_idx]
-            delineated_items = self.waves[idx][channel_1_idx][0]
 
-            ecg_baseline_features = {}
-            ecg_baseline_features = self._extract_on_offsets(ecg_baseline_features, ecg_channel_1, delineated_items)
+            try:
+                ecg_channel_1 = ecg_sample[channel_1_idx]
+                r_peaks_channel_1 = self.r_peaks[idx][channel_1_idx]
+                delineated_items = self.waves[idx][channel_1_idx][0]
 
-            ecg_rate = nk.ecg_rate(r_peaks_channel_1, sampling_rate=self.frequency)
+                ecg_baseline_features = {}
 
-            rpeak_time = self._get_time_msec(r_peaks_channel_1)
+                if delineated_items is None:
+                    print(f"Warning: Delineated items are missing for sample {idx}. Skipping.")
+                    continue
+                    
+                ecg_baseline_features = self._extract_on_offsets(ecg_baseline_features, ecg_channel_1,
+                                                                 delineated_items)
 
-            rr_interval_avg = self._calculate_rr_interval(rpeak_time)
+                ecg_rate = nk.ecg_rate(r_peaks_channel_1, sampling_rate=self.frequency)
+                rpeak_time = self._get_time_msec(r_peaks_channel_1)
+                rr_interval_avg = self._calculate_rr_interval(rpeak_time)
+                pr_interval_avg, qrs_complex_avg, qt_interval_avg, st_segment_avg = self._extract_intervals(
+                    ecg_baseline_features)
 
-            pr_interval_avg, qrs_complex_avg, qt_interval_avg, st_segment_avg = self._extract_intervals(
-                ecg_baseline_features)
+                # Aggregate all extracted features
+                ecg_baseline_features.update({
+                    'sample_idx': idx,
+                    'lead': self.channel,
+                    'heart_rate': np.mean(ecg_rate) if len(ecg_rate) > 0 else None,
+                    'r_peaks': r_peaks_channel_1,
+                    'pr_interval': pr_interval_avg,
+                    'qrs_complex': qrs_complex_avg,
+                    'qt_interval': qt_interval_avg,
+                    'rr_interval': rr_interval_avg,
+                    'st_segment': st_segment_avg,
+                })
 
-            ecg_baseline_features['sample_idx'] = idx
-            ecg_baseline_features['lead'] = self.channel
-            ecg_baseline_features['heart_rate'] = np.mean(ecg_rate)
-            ecg_baseline_features['r_peaks'] = r_peaks_channel_1
-            ecg_baseline_features['pr_interval'] = pr_interval_avg
-            ecg_baseline_features['qrs_complex'] = qrs_complex_avg
-            ecg_baseline_features['qt_interval'] = qt_interval_avg
-            ecg_baseline_features['rr_interval'] = rr_interval_avg
-            ecg_baseline_features['st_segment'] = st_segment_avg
+                features_list.append(ecg_baseline_features)
 
-            features_list.append(ecg_baseline_features)
+            except Exception as e:
+                print(f"Error processing ECG sample {idx} for lead {self.channel}: {e} ")
+                continue
 
         features_df = pd.DataFrame(features_list)
-
         return features_df
 
     def generate_annotations(self, df):
@@ -71,7 +82,6 @@ class ECGFeatureExtractor:
 
         # Convert to DataFrame
         annotations_df = pd.DataFrame(annotations)
-
         return annotations_df
 
     def _extract_on_offsets(self, ecg_baseline_features, ecg_clean, waves):
@@ -84,14 +94,6 @@ class ECGFeatureExtractor:
                 ecg_baseline_features[key[4:].lower()] = time_msec
 
         return ecg_baseline_features
-
-    @staticmethod
-    def _get_time_msec(indices):
-        time_ms = []
-        for idx in indices:
-            time_ms.append(idx * 2)
-
-        return time_ms
 
     def _extract_intervals(self, ecg_baseline_features):
         pr_interval_avg = self._calculate_interval(
@@ -107,6 +109,14 @@ class ECGFeatureExtractor:
             ecg_baseline_features['r_offsets'], ecg_baseline_features['t_onsets']
         )
         return pr_interval_avg, qrs_complex_avg, qt_interval_avg, st_segment_avg
+
+    @staticmethod
+    def _get_time_msec(indices):
+        time_ms = []
+        for idx in indices:
+            time_ms.append(idx * 2)
+
+        return time_ms
 
     @staticmethod
     def _calculate_interval(onset, offset):

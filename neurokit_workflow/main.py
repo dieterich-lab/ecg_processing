@@ -33,18 +33,25 @@ def process_ecg_data():
     cleaned_ecg = clean_ecg(ecg_array, sampling_rate=samp_freq)
 
     # detect the R peaks for every lead of the ecgs separately
-    r_peaks = detect_r_peaks(cleaned_ecg, sampling_rate=samp_freq)
+    r_peaks = detect_r_peaks(cleaned_ecg, sampling_rate=samp_freq, dataset=DATASET)
 
     # delineate the cleaned ecg into its components
-    delineation_results = delineate_ecg(cleaned_ecg, r_peaks, sampling_rate=samp_freq)
+    delineation_results = delineate_ecg(cleaned_ecg, r_peaks, sampling_rate=samp_freq, dataset=DATASET)
 
+    # extract ecg baseline features with related intervals
     feature_extractor = ECGFeatureExtractor(cleaned_ecg, r_peaks, delineation_results, samp_freq, channel_seq)
     features_df = feature_extractor.extract_features()
+
+    # save the
+    features_baseline = features_df[['sample_idx', 'lead', 'heart_rate', 'r_peaks', 'pr_interval', 'qrs_complex',
+                                     'qt_interval', 'rr_interval', 'st_segment']]
+    features_baseline.to_csv(os.path.join(config['OUTPUT_DIRECTORY'], f'{DATASET}_ecg_baseline_features.csv'),
+                             float_format='%.3f', index=False)
 
     annotations_df = feature_extractor.generate_annotations(features_df)
     annotations_df = annotations_df.convert_dtypes()
 
-    annotations_df.to_csv(os.path.join(config['OUTPUT_DIRECTORY'], 'annotations.csv'))
+    annotations_df.to_csv(os.path.join(config['OUTPUT_DIRECTORY'], 'annotations.csv'), index=False)
 
 
 if __name__ == '__main__':
