@@ -29,5 +29,6 @@ This package processes ECG data and extracts baseline features with related inte
 
 Edit the `config.json` file to specify dataset paths and output directories.
 
+refer to neurokit_workflow
 
    
