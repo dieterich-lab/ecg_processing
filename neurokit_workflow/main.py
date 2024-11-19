@@ -42,15 +42,15 @@ def process_ecg_data():
     feature_extractor = ECGFeatureExtractor(cleaned_ecg, r_peaks, delineation_results, samp_freq, channel_seq)
     features_df = feature_extractor.extract_features()
 
-    # save the
+    # save the ECG baseline features with intervals to a CSV file
     features_baseline = features_df[['sample_idx', 'lead', 'heart_rate', 'r_peaks', 'pr_interval', 'qrs_complex',
                                      'qt_interval', 'rr_interval', 'st_segment']]
     features_baseline.to_csv(os.path.join(config['OUTPUT_DIRECTORY'], f'{DATASET}_ecg_baseline_features.csv'),
                              float_format='%.3f', index=False)
 
+    # extract and save the ecg annotations with metadata of features to a CSV file
     annotations_df = feature_extractor.generate_annotations(features_df)
     annotations_df = annotations_df.convert_dtypes()
-
     annotations_df.to_csv(os.path.join(config['OUTPUT_DIRECTORY'], 'annotations.csv'), index=False)
 
 

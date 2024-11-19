@@ -1,8 +1,6 @@
 import neurokit2 as nk
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 
 def delineate_ecg(cleaned_ecg, r_peaks, sampling_rate, dataset=None):
     """
