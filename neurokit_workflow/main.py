@@ -17,11 +17,11 @@ pd.set_option('display.max_colwidth', None)
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
-DATASET = 'UKBIOBANK'
+DATASET = 'MEDICONNECT'
 
 
 def process_ecg_data():
-    # Step 1: Load ECG data
+    # Load ECG data from their custom data loader
     if DATASET == 'MEDICONNECT':
         ecg_array, samp_freq, channel_seq = load_mediconnect_data(config['DATASETS']['MEDICONNECT']['DICOM_DIR'])
     elif DATASET == 'UKBIOBANK':
@@ -42,16 +42,23 @@ def process_ecg_data():
     feature_extractor = ECGFeatureExtractor(cleaned_ecg, r_peaks, delineation_results, samp_freq, channel_seq)
     features_df = feature_extractor.extract_features()
 
-    # save the ECG baseline features with intervals to a CSV file
+    # get the columns with the main baseline features
     features_baseline = features_df[['sample_idx', 'lead', 'heart_rate', 'r_peaks', 'pr_interval', 'qrs_complex',
                                      'qt_interval', 'rr_interval', 'st_segment']]
-    features_baseline.to_csv(os.path.join(config['OUTPUT_DIRECTORY'], f'{DATASET}_ecg_baseline_features.csv'),
-                             float_format='%.3f', index=False)
 
-    # extract and save the ecg annotations with metadata of features to a CSV file
+    # extract the ecg annotations with metadata of features
     annotations_df = feature_extractor.generate_annotations(features_df)
     annotations_df = annotations_df.convert_dtypes()
-    annotations_df.to_csv(os.path.join(config['OUTPUT_DIRECTORY'], 'annotations.csv'), index=False)
+
+    # create output directory if it does not already exist
+    output_directory = config['OUTPUT_DIRECTORY']
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory, exist_ok=True)
+
+    # save the features and their metadata to a CSV file
+    features_baseline.to_csv(os.path.join(output_directory, f'{DATASET}_ecg_baseline_features.csv'),
+                             float_format='%.3f', index=False)
+    annotations_df.to_csv(os.path.join(output_directory, 'annotations.csv'), index=False)
 
 
 if __name__ == '__main__':

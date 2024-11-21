@@ -14,7 +14,7 @@ def delineate_ecg(cleaned_ecg, r_peaks, sampling_rate, dataset=None):
             ecg_sample = cleaned_ecg[j, i, :]
             rpeaks_sample = r_peaks[i, j]
 
-            if rpeaks_sample is not None and ecg_sample is not None:
+            if (rpeaks_sample is not None and len(rpeaks_sample) > 3) and ecg_sample is not None:
                 signal, waves = nk.ecg_delineate(ecg_sample, r_peaks[i, j], sampling_rate=sampling_rate, method="dwt")
                 delineation_results[j, i] = waves
 
