@@ -34,6 +34,7 @@ class ECGFeatureExtractor:
                                                                  delineated_items)
 
                 ecg_rate = nk.ecg_rate(r_peaks_channel_1, sampling_rate=self.frequency)
+                ecg_rate = np.array(ecg_rate)
                 rpeak_time = self._get_time_msec(r_peaks_channel_1)
                 rr_interval_avg = self._calculate_rr_interval(rpeak_time)
                 pr_interval_avg, qrs_complex_avg, qt_interval_avg, st_segment_avg = self._extract_intervals(

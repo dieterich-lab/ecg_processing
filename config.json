@@ -1,7 +1,7 @@
 {
   "DATASETS": {
     "MEDICONNECT": {
-      "DICOM_DIR": "../WP4_Selection/DICOM/"
+      "DICOM_DIR": "./WP4_Selection/DICOM/"
     },
     "UKBIOBANK": {
       "DIR_PATH": "/biodb/ukbiobank/bulkdata"

@@ -12,12 +12,19 @@ def _setup(dir_path):
     df_records['path'] = df_records['path'].apply(lambda x: os.path.join(dir_path, x))
     df_records['record'] = df_records['path'].apply(_read_record)
 
+    # Initialize variables
+    samp_freq, num_leads, num_samples = None, None, None
+
     for idx, row in df_records.iterrows():
         ecg_signals = _extract_signal(row['record'])
         samp_freq = row['record'].fs
         if ecg_signals is not None:
             num_leads, num_samples = ecg_signals.shape[1], ecg_signals.shape[0]
             break
+
+    # Ensure we have valid data
+    if samp_freq is None or num_leads is None or num_samples is None:
+        raise ValueError("No valid ECG signals were found in the provided records.")
 
     return df_records, samp_freq, num_leads, num_samples
 
@@ -53,6 +60,3 @@ def load_mimic_data(dir_path):
             print(f"Record at index {idx} does not have the expected shape or is None.")
 
     return signals_array, samp_freq, CHANNELS_SEQ
-
-
-

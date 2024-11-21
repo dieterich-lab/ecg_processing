@@ -17,7 +17,7 @@ pd.set_option('display.max_colwidth', None)
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
-DATASET = 'MEDICONNECT'
+DATASET = 'MIMIC'
 
 
 def process_ecg_data():
@@ -28,6 +28,8 @@ def process_ecg_data():
         ecg_array, samp_freq, channel_seq = load_ukbiobank_data(config['DATASETS']['UKBIOBANK']['DIR_PATH'])
     elif DATASET == 'MIMIC':
         ecg_array, samp_freq, channel_seq = load_mimic_data(config['DATASETS']['MIMIC']['DIR_PATH'])
+    else:
+        raise ValueError('Dataset not supported and no data loader is created')
 
     # clean the ecgs to remove any noise and baseline wandering
     cleaned_ecg = clean_ecg(ecg_array, sampling_rate=samp_freq)
@@ -36,7 +38,7 @@ def process_ecg_data():
     r_peaks = detect_r_peaks(cleaned_ecg, sampling_rate=samp_freq, dataset=DATASET)
 
     # delineate the cleaned ecg into its components
-    delineation_results = delineate_ecg(cleaned_ecg, r_peaks, sampling_rate=samp_freq, dataset=DATASET)
+    delineation_results = delineate_ecg(cleaned_ecg, r_peaks, sampling_rate=samp_freq)
 
     # extract ecg baseline features with related intervals
     feature_extractor = ECGFeatureExtractor(cleaned_ecg, r_peaks, delineation_results, samp_freq, channel_seq)

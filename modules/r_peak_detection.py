@@ -31,7 +31,7 @@ def clean_ecg(ecg_data, sampling_rate):
     return cleaned_ecg_data
 
 
-def detect_r_peaks(cleaned_ecg, sampling_rate, channel_seq=None, dataset=None):
+def detect_r_peaks(cleaned_ecg, sampling_rate, dataset=None):
     r_peaks = np.empty((cleaned_ecg.shape[1], cleaned_ecg.shape[0]), dtype=object)  # Shape: (12, N)
 
     for i in range(cleaned_ecg.shape[1]):  # Iterate over each lead (12 leads)

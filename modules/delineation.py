@@ -2,7 +2,7 @@ import neurokit2 as nk
 import numpy as np
 
 
-def delineate_ecg(cleaned_ecg, r_peaks, sampling_rate, dataset=None):
+def delineate_ecg(cleaned_ecg, r_peaks, sampling_rate):
     """
     Performs ECG delineation for each lead in the cleaned ECG data using NeuroKit.
     cleaned_ecg: A 3D numpy array (N, 12, samples)
