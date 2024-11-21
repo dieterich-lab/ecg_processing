@@ -1,19 +1,17 @@
 # ECG Processing and Feature Extraction
 
 This package performs ECG processing on custom datasets followed by feature extraction.
-1. **QRS Beat Detection** - use a QRS detector to compute an average beat.
-     -  neurokit provided by neurokit2 packages
-     -  xqrs provided by wfdb package
+1. **R-Peak Detection** - Detect R-peaks in 12-lead ecgs using Neurokit2 tool.
 2. **ECG Delineation** - to detect P/QRS/T onset/peak/offset.
-3. **End-to-end pipeline processing raw ECGs**
+3. **Feature Extraction** - Compute baseline features such as heart rate and ecg-related intervals (PR interval, QT interval, etc.)
 
 ## Workflow
 
-1. Load ECG data from a specified dataset.
-2. Perform cleaning and preprocessing of ECG signals.
-3. Detect R-peaks and delineate ECG signals into their physiological components.
-4. Extract features from the cleaned ECG data.
-5. Save the extracted features and annotations to output files.
+* Load ECG data from a specified dataset.
+*  Perform cleaning and preprocessing of ECG signals.
+*  Detect R-peaks and delineate ECG signals into their physiological components.
+*  Extract features from the cleaned ECG data.
+*  Save the extracted features and annotations to output files.
 
 ## Installation
 
@@ -28,7 +26,7 @@ This package performs ECG processing on custom datasets followed by feature extr
 
 3. To run the script:
    ```bash
-   process_ecg_data
+   python main.py
 
 ## Configuration
 
