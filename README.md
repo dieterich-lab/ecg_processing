@@ -32,4 +32,17 @@ This package performs ECG processing on custom datasets followed by feature extr
 
 Edit the `config.json` file to specify dataset paths and output directories.
 
+## Data Loader and Formats
+
+Currently, the pipeline is tested with 3 different datasets i.e. Mediconnect, UK Biobank and MIMIC-IV ECGs.
+The data loader script for each of these datasets is available under `data_loader/` directory.
+
+Now, to use your own dataset, create a data loader under the same directory,
+
+**Expected Output**
+
+1. A NumPy array of ECG signals `(signal_array)` with shape `(n_samples, n_leads, n_timepoints).`
+2. The sample frequency `(samp_freq)`.
+3. A predefined list of channel sequences `(CHANNELS_SEQ)`.
+
    
