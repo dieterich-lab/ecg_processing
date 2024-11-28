@@ -75,7 +75,7 @@ class ECGFeatureExtractor:
 
             # Append dictionary for each column
             annotations.append({
-                'Column Name': col,
+                'Features': col,
                 'Description': self._get_description(col),
                 'Data Type': data_type,
                 'Units': self._get_units(col)

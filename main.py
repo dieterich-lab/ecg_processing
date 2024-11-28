@@ -17,7 +17,7 @@ pd.set_option('display.max_colwidth', None)
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
-DATASET = 'MIMIC'
+DATASET = 'UKBIOBANK'
 
 
 def process_ecg_data():
