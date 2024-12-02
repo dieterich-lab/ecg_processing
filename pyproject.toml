@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecg_processing"
+version = "1.0.0"
+description = "A python pipeline to process custom datasets for extraction of baseline ECG features and its metadata"
+authors = [
+    { name = "Sanketa Hegde", email = "sanketa.hegde@uni-heidelberg.de" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["r-peaks", "feature extraction", "ecg delineation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: GNU GENERAL PUBLIC LICENSE v3.0",
+    "Operating System :: Linux",
+]
+dependencies = [
+    "numpy>=1.24.2",
+    "scipy>=1.14.0",
+    "wfdb>=4.1.2",
+    "pydicom>=2.4.4",
+    "pandas>=2.2.2",
+    "neurokit2>=0.2.10"
+]
+
+[tool.setuptools.packages.find]
+where = ["data_loader", "modules"]
+
+[project.urls]
+Repository = "https://github.com/dieterich-lab/ecg_processing.git"
