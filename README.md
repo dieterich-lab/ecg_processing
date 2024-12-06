@@ -20,9 +20,9 @@ This package performs ECG processing on custom datasets followed by feature extr
    git@github.com:dieterich-lab/ecg_processing.git
    cd ecg_processing
 
-2. Install the package:
+2. Install the package with dependencies:
    ```bash
-   pip install -r requirements.txt
+   python -m build
 
 3. To run the script:
    ```bash
