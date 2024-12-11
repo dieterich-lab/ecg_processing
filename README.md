@@ -22,6 +22,7 @@ This package performs ECG processing on custom datasets followed by feature extr
 
 2. Install the package with dependencies:
    ```bash
+   pip install e .
    python -m build
 
 3. To run the script:
